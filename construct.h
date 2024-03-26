@@ -11,7 +11,7 @@
 
 #include <new>
 
-namespace mystl {
+namespace TinySTL {
     /* construct 构造对象 */
 
     template<typename Ty>
@@ -26,7 +26,7 @@ namespace mystl {
 
     template<typename Ty, typename ...Args>
     void construct(Ty *ptr, Args &&...args) {
-        new(ptr) Ty(mystl::forward<Args>(args)...);
+        new(ptr) Ty(TinySTL::forward<Args>(args)...);
     }
 
     /* destroy 析构对象 */
