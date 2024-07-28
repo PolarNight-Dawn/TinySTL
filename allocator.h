@@ -2,10 +2,12 @@
 // Created by polarnight on 24-3-26, 下午10:02.
 //
 
-#ifndef TINYSTL_ALLOCATOR_H
-#define TINYSTL_ALLOCATOR_H
+#ifndef tinystl_ALLOCATOR_H
+#define tinystl_ALLOCATOR_H
 
-/* 这个头文件包含一个模板类 allocator， 仅仅对于 ::operator new 和 ::operator delete 的简单封装 */
+/* 这个头文件包含一个模板类 allocator
+ * 仅仅是对于 ::operator new 和 ::operator delete 的简单封装
+ * 并没有考虑任何效率上的优化 */
 
 #include <cstddef> // for ptrdiff_t size_t
 #include <algorithm> // for std::move
@@ -40,8 +42,8 @@ class allocator {
   static void construct(T *ptr);
   static void construct(T *ptr, const T &value);
   static void construct(T *ptr, T &&value);
-//   template<class... Args>
-//   static void construct(T *ptr, Args &&...args);
+  template<class... Args>
+  static void construct(T *ptr, Args &&...args);
 
   /* 负责析构对象 */
   static void destroy(T *ptr);
@@ -83,33 +85,33 @@ void allocator<T>::deallocate(T *ptr, size_type) {
 
 template<typename T>
 void allocator<T>::construct(T *ptr) {
-  TinySTL::construct(ptr);
+  tinystl::construct(ptr);
 }
 
 template<typename T>
 void allocator<T>::construct(T *ptr, const T &value) {
-  TinySTL::construct(ptr, value);
+  tinystl::construct(ptr, value);
 }
 
 template<typename T>
 void allocator<T>::construct(T *ptr, T &&value) {
-  TinySTL::construct(ptr, std::move(value));
+  tinystl::construct(ptr, std::move(value));
 }
 
-// template<typename T>
-// template<typename ...Args>
-// void allocator<T>::construct(T *ptr, Args &&...args) {
-//   TinySTL::construct(ptr, TinySTL::forward<Args>(args)...);
-// }
+template<typename T>
+template<typename ...Args>
+void allocator<T>::construct(T *ptr, Args &&...args) {
+  tinystl::construct(ptr, std::forward<Args>(args)...);
+}
 
 template<typename T>
 void allocator<T>::destroy(T *ptr) {
-  TinySTL::destroy(ptr);
+  tinystl::destroy(ptr);
 }
 
 template<typename T>
 void allocator<T>::destroy(T *first, T *last) {
-  TinySTL::destroy(first, last);
+  tinystl::destroy(first, last);
 }
 
 template<typename T>
@@ -124,4 +126,4 @@ size_t allocator<T>::max_size() {
 
 } // namespace tinystl
 
-#endif //TINYSTL_ALLOCATOR_H
+#endif //tinystl_ALLOCATOR_H
