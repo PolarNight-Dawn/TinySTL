@@ -9,7 +9,10 @@
 
 #include "construct.h"
 
-/* 具有 SGI 特色的两级分配器 */
+/* 具有 SGI 特色的两级分配器
+ * 考虑内存不足时的应变措施
+ * 考虑过多 “小型区块” 可能造成的 fragment
+ * 排除了 multi-threads 状态 */
 
 namespace tinystl {
 /* 使用 malloc 和 free 实现的一级分配器
