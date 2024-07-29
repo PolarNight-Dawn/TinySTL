@@ -20,13 +20,13 @@ template<typename T>
 class allocator {
  public:
   /* STL 要求的类型别名定义 */
-  typedef T value_type; // using value_type = T;
-  typedef T *pointer;
-  typedef const T *const_pointer;
-  typedef T &reference;
-  typedef const T &const_reference;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
+  using value_type = T; // using value_type = T;
+  using pointer = T *;
+  using const_pointer = const T *;
+  using reference = T &;
+  using const_reference = const T &;
+  using size_type = size_t;
+  using difference_type = ptrdiff_t;
 
  public:
   /* STL 要求的类接口，使用静态函数实现使频繁调用下的开销减少 */
@@ -58,7 +58,7 @@ class allocator {
   /* 使 T 类型的 allocator 可以为 U 类型的对象分配内存 */
   template<typename U>
   struct rebind {
-	typedef allocator<U> other;
+	using other = allocator<U>;
   };
 };
 
