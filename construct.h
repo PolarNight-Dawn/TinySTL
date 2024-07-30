@@ -77,6 +77,6 @@ inline void destroy(ForwardIterator first, ForwardIterator last) {
   destroy_aux(first, last, is_trivial_dtor());
 }
 
-}
+} // namespace tinystl
 
 #endif //TINYSTL_CONSTRUCT_H
