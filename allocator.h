@@ -5,7 +5,7 @@
 #ifndef tinystl_ALLOCATOR_H
 #define tinystl_ALLOCATOR_H
 
-/* 这个头文件包含一个模板类 allocator
+/* <allocator.h> 包含一个模板类 allocator
  * 仅仅是对于 ::operator new 和 ::operator delete 的简单封装
  * 并没有考虑任何效率上的优化 */
 

@@ -5,7 +5,7 @@
 #ifndef TINYSTL_CONSTRUCT_H
 #define TINYSTL_CONSTRUCT_H
 
-/* 这个头文件包含两个函数 construct() 和 destroy()
+/* <construct.h> 包含两个函数 construct() 和 destroy()
  * construct：负责对象的构造
  * destroy：负责对象的析构 */
 
