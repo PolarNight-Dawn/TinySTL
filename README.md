@@ -9,6 +9,7 @@
   - 空间的配置与释放 std::alloc (alloc.h)
     - 第一级配置器 malloc_alloc
     - 第二级配置器 default_alloc
+  - 内存基本处理工具 (uninitialized.h)
 
 ## 参考资料
 - 《STL源码剖析》by 候捷
