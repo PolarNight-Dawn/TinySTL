@@ -17,6 +17,7 @@
     - uninitialized_fill_n()
 - 迭代器 iterators
   - iterator_traits（iterator.h）
+  - __type_traits（type_traits.h）
 
 ## 参考资料
 - 《STL源码剖析》by 候捷
