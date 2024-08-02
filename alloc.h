@@ -269,8 +269,14 @@ void *default_alloc::reallocate(void *ptr, size_t old_size, size_t new_size) {
   return result;
 }
 
+#ifdef DIRECT_USE_MALLOC
+using Alloc = default_alloc;
+#else
+using Alloc = default_alloc;
+#endif
+
 // SGI STL 特色分配器，需要一个模板参数，具有 STL 标准接口
-template<typename T>
+template<typename T, typename Alloc>
 class alloc {
  public:
   // STL 要求的类型别名定义
@@ -301,64 +307,64 @@ class alloc {
   static size_t max_size();
   template<typename U>
   struct rebind {
-	using other = alloc<U>;
+	using other = alloc<U, Alloc>;
   };
 };
 
-template<typename T>
-T *alloc<T>::allocate(size_t n) {
-  return n == 0 ? 0 : static_cast<T *>(default_alloc::allocate(n * sizeof(T)));
+template<typename T, typename Alloc>
+T *alloc<T, Alloc>::allocate(size_t n) {
+  return n == 0 ? 0 : static_cast<T *>(Alloc::allocate(n * sizeof(T)));
 }
 
-template<typename T>
-T *alloc<T>::allocate() {
-  return static_cast<T *>(default_alloc::allocate(sizeof(T)));
+template<typename T, typename Alloc>
+T *alloc<T, Alloc>::allocate() {
+  return static_cast<T *>(Alloc::allocate(sizeof(T)));
 }
 
-template<typename T>
-void alloc<T>::deallocate(T *ptr, size_t n) {
+template<typename T, typename Alloc>
+void alloc<T, Alloc>::deallocate(T *ptr, size_t n) {
   if (n != 0)
-	default_alloc::deallocate((void *)ptr, n * sizeof(T));
+	Alloc::deallocate((void *)ptr, n * sizeof(T));
 }
 
-template<typename T>
-void alloc<T>::deallocate(T *ptr) {
+template<typename T, typename Alloc>
+void alloc<T, Alloc>::deallocate(T *ptr) {
   if (ptr)
-	default_alloc::deallocate((void *)ptr, sizeof(T));
+	Alloc::deallocate((void *)ptr, sizeof(T));
 }
 
-template<typename T>
-void alloc<T>::construct(T *ptr) {
+template<typename T, typename Alloc>
+void alloc<T, Alloc>::construct(T *ptr) {
   tinystl::construct(ptr);
 }
 
-template<typename T>
-void alloc<T>::construct(T *ptr, const T &value) {
+template<typename T, typename Alloc>
+void alloc<T, Alloc>::construct(T *ptr, const T &value) {
   tinystl::construct(ptr, value);
 }
 
-template<typename T>
-void alloc<T>::construct(T *ptr, T &&value) {
+template<typename T, typename Alloc>
+void alloc<T, Alloc>::construct(T *ptr, T &&value) {
   tinystl::construct(ptr, std::move(value));
 }
 
-template<typename T>
-void alloc<T>::destroy(T *ptr) {
+template<typename T, typename Alloc>
+void alloc<T, Alloc>::destroy(T *ptr) {
   tinystl::destroy(ptr);
 }
 
-template<typename T>
-void alloc<T>::destroy(T *first, T *last) {
+template<typename T, typename Alloc>
+void alloc<T, Alloc>::destroy(T *first, T *last) {
   tinystl::destroy(first, last);
 }
 
-template<typename T>
-T *alloc<T>::address(T &val) {
+template<typename T, typename Alloc>
+T *alloc<T, Alloc>::address(T &val) {
   return (T *)(&val);
 }
 
-template<typename T>
-size_t alloc<T>::max_size() {
+template<typename T, typename Alloc>
+size_t alloc<T, Alloc>::max_size() {
   return (size_t)(UINT_MAX / sizeof(T));
 }
 

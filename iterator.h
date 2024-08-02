@@ -13,6 +13,8 @@
 
 #include <cstddef> // for ptrdiff_t
 
+#include "type_traits.h"
+
 namespace tinystl {
 /* 五种 iterator 类型 */
 struct input_iterator_tag {};
