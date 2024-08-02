@@ -18,6 +18,9 @@
 - 迭代器 iterators
   - iterator_traits（iterator.h）
   - __type_traits（type_traits.h）
+- 容器 containers
+  - 序列式容器 sequence containers
+    - vector（vector.h）
 
 ## 参考资料
 - 《STL源码剖析》by 候捷
