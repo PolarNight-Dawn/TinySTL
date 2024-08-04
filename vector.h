@@ -30,7 +30,7 @@ class vector {
   iterator end_of_storage_;
 
   void insert_aux(iterator position, const_reference value);
-  void deallocate() { if (start_) Allocator::deallocate(start_, end_of_storage_ - start_); }
+  void deallocate() { if (start_) data_allocator::deallocate(start_, end_of_storage_ - start_); }
   void fill_init(size_type n, const_reference value);
   template<typename InputIterator>
   void copy_init(InputIterator first, InputIterator last);
@@ -61,26 +61,23 @@ class vector {
   const_iterator end() const noexcept { return finish_; }
 
   /* capacity 相关操作 */
-  size_type size() const { return finish_ - start_; }
-  size_type max_size() const { return size_type(-1) / sizeof(T); }
-  size_type capacity() const { return end_of_storage_ - start_; }
-  bool empty() const { return start_ == finish_; }
+  size_type size() const { return static_cast<size_type >(end() - begin()); }
+  size_type max_size() const { return static_cast<size_type >(-1) / sizeof(T); }
+  size_type capacity() const { return static_cast<size_type >(end_of_storage_ - begin()); }
+  bool empty() const { return begin() == end(); }
   void reserve(size_type n);
 
   /* 访问相关操作 */
-  reference front() { return *start_; }
-  const_reference front() const { return *start_; }
-  reference back() { return *(finish_ - 1); }
-  const_reference back() const { return *(finish_ - 1); }
-  reference operator[](size_type n) { return *(start_ + n); }
-  const_reference operator[](size_type n) const { return *(start_ + n); }
+  reference front() { return *begin(); }
+  const_reference front() const { return *begin(); }
+  reference back() { return *(end() - 1); } // [begin(), end())
+  const_reference back() const { return *(end() - 1); }
+  reference operator[](size_type n) { return *(begin() + n); }
+  const_reference operator[](size_type n) const { return *(begin() + n); }
 
   /* container 相关操作 */
   void push_back(const T &value);
-  void pop_back() {
-	--finish_;
-	destroy(finish_);
-  }
+  void pop_back();
   void swap(vector<T, Allocator> &rhs);
   iterator insert(iterator position, const T &value);
   iterator insert(iterator position) { return insert(position, T()); }
@@ -95,14 +92,14 @@ class vector {
 
 template<typename T, typename Allocator>
 void vector<T, Allocator>::fill_init(size_type n, const T &value) {
-  start_ = Allocator::allocate(n);
+  start_ = data_allocator::allocate(n);
   try {
 	uninitialized_fill_n(start_, n, value);
 	finish_ = start_ + n;
 	end_of_storage_ = finish_;
   }
   catch (...) {
-	Allocator::deallocate(start_, n);
+	data_allocator::deallocate(start_, n);
   }
 }
 
@@ -110,14 +107,14 @@ template<typename T, typename Allocator>
 template<typename InputIterator>
 void vector<T, Allocator>::copy_init(InputIterator first, InputIterator last) {
   size_type n = last - first;
-  start_ = Allocator::allocate(n);
+  start_ = data_allocator::allocate(n);
   try {
 	uninitialized_copy(first, last, start_);
 	finish_ = start_ + n;
 	end_of_storage_ = finish_;
   }
   catch (...) {
-	Allocator::deallocate(start_, n);
+	data_allocator::deallocate(start_, n);
 	throw;
   }
 }
@@ -127,12 +124,13 @@ void vector<T, Allocator>::insert_aux(iterator position, const T &value) {
   if (finish_ != end_of_storage_) {
 	construct(finish_, *(finish_ - 1));
 	++finish_;
+	T x_copy = value;
 	std::copy_backward(position, finish_ - 2, finish_ - 1);
-	*position = value;
+	*position = x_copy;
   } else {
 	const size_type old_size = size();
 	const size_type new_size = old_size ? old_size * 2 : 1;
-	iterator new_start = Allocator::allocate(new_size);
+	iterator new_start = data_allocator::allocate(new_size);
 	iterator new_finish = new_start;
 	try {
 	  new_finish = uninitialized_copy(start_, position, new_start);
@@ -141,7 +139,7 @@ void vector<T, Allocator>::insert_aux(iterator position, const T &value) {
 	}
 	catch (...) {
 	  destroy(new_start, new_finish);
-	  Allocator::deallocate(new_start, new_size);
+	  data_allocator::deallocate(new_start, new_size);
 	  throw;
 	}
 	destroy(start_, finish_);
@@ -159,7 +157,7 @@ vector<T, Allocator> &vector<T, Allocator>::operator=(const vector<T, Allocator>
   if (&vec != this) {
 	size_type new_size = vec.size();
 	if (new_size > capacity()) {
-	  iterator new_start = Allocator::allocate(new_size);
+	  iterator new_start = data_allocator::allocate(new_size);
 	  end_of_storage_ = uninitialized_copy(vec.begin(), vec.end(), new_start);
 	  destroy(start_, finish_);
 	  deallocate();
@@ -189,6 +187,12 @@ void vector<T, Allocator>::push_back(const T &value) {
 	construct(finish_++, value);
   else
 	insert_aux(finish_, value);
+}
+
+template<typename T, typename Allocator>
+void vector<T, Allocator>::pop_back() {
+  --finish_;
+  destroy(finish_);
 }
 
 template<typename T, typename Allocator>
@@ -225,7 +229,7 @@ void vector<T, Allocator>::insert(iterator pos, size_type n, const T &value) {
   } else {
 	const size_type old_size = size();
 	const size_type new_size = old_size + old_size > n ? old_size : n;
-	iterator new_start = Allocator::allocate(new_size);
+	iterator new_start = data_allocator::allocate(new_size);
 	iterator new_finish = new_start;
 	try {
 	  new_finish = uninitialized_copy(start_, pos, new_start);
@@ -234,7 +238,7 @@ void vector<T, Allocator>::insert(iterator pos, size_type n, const T &value) {
 	}
 	catch (...) {
 	  destroy(new_start, new_finish);
-	  Allocator::deallocate(new_start, new_size);
+	  data_allocator::deallocate(new_start, new_size);
 	  throw;
 	}
 	destroy(start_, finish_);
@@ -273,14 +277,14 @@ void vector<T, Allocator>::resize(size_type new_size, const T &value) {
 template<typename T, typename Allocator>
 void vector<T, Allocator>::reserve(size_type n) {
   if (capacity() < n) {
-	iterator new_start = Allocator::allocate(n);
+	iterator new_start = data_allocator::allocate(n);
 	iterator new_finish = new_start;
 	try {
 	  new_finish = uninitialized_copy(start_, finish_, new_start);
 	}
 	catch (...) {
 	  destroy(new_start, new_finish);
-	  Allocator::deallocate(new_start, n);
+	  data_allocator::deallocate(new_start, n);
 	}
 	destroy(start_, finish_);
 	deallocate();
