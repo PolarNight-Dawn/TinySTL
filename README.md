@@ -21,6 +21,7 @@
 - 容器 containers
   - 序列式容器 sequence containers
     - vector（vector.h）
+    - list（list.h）
 
 ## 参考资料
 - 《STL源码剖析》by 候捷
