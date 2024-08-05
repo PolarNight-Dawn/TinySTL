@@ -87,7 +87,6 @@ class vector {
   void resize(size_type new_size, const T &value);
   void resize(size_type new_size) { resize(new_size, T()); }
   void clear() { erase(start_, finish_); }
-
 };
 
 template<typename T, typename Allocator>
