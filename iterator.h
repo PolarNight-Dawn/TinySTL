@@ -158,6 +158,98 @@ inline void advance(InputIterator iter, const Distance &n) {
   advance_aux(iter, n, iterator_category(iter));
 }
 
+/*****************************************************************************************/
+
+/* reverse_iterator 模板 */
+
+template<typename Iterator>
+class reverse_iterator {
+ private:
+  Iterator current;
+
+ public:
+  using iterator_category = typename Iterator::iterator_category;
+  using value_type = typename Iterator::value_type;
+  using difference_type = typename Iterator::difference_type;
+  using pointer = typename Iterator::pointer;
+  using reference = typename Iterator::reference;
+
+  using iterator_type = Iterator;
+  using self = reverse_iterator<Iterator>;
+
+ public:
+  reverse_iterator() = default;
+  explicit reverse_iterator(iterator_type i) : current(i) {}
+  reverse_iterator(const self &rhs) : current(rhs.current) {}
+
+ public:
+  iterator_type base() const { return current; }
+  reference operator*() const { // 实际对应正向迭代器的前一个位置
+	auto tmp = current;
+	return *--tmp;
+  }
+  pointer operator->() const { return &(operator*()); }
+  self &operator++() { // 前进(++)变为后退(--)
+	--current;
+	return *this;
+  }
+  self operator++(int) {
+	self tmp = *this;
+	--current;
+	return tmp;
+  }
+  self &operator--() { // 后退(--)变为前进(++)
+	++current;
+	return *this;
+  }
+  self operator--(int) {
+	self tmp = *this;
+	++current;
+	return tmp;
+  }
+  self &operator+=(difference_type n) {
+	current -= n;
+	return *this;
+  }
+  self operator+(difference_type n) const { return self(current - n); }
+  self &operator-=(difference_type n) {
+	current += n;
+	return *this;
+  }
+  self operator-(difference_type n) const { return self(current + n); }
+  reference operator[](difference_type n) const { return *(*this + n); }
+
+};
+
+template<class Iterator>
+inline typename reverse_iterator<Iterator>::difference_type
+operator-(const reverse_iterator<Iterator> &lhs,
+		  const reverse_iterator<Iterator> &rhs) { return rhs.base() - lhs.base(); }
+
+template<class Iterator>
+inline bool operator==(const reverse_iterator<Iterator> &lhs,
+					   const reverse_iterator<Iterator> &rhs) { return lhs.base() == rhs.base(); }
+
+template<class Iterator>
+inline bool operator<(const reverse_iterator<Iterator> &lhs,
+					  const reverse_iterator<Iterator> &rhs) { return rhs.base() < lhs.base(); }
+
+template<class Iterator>
+inline bool operator!=(const reverse_iterator<Iterator> &lhs,
+					   const reverse_iterator<Iterator> &rhs) { return !(lhs == rhs); }
+
+template<class Iterator>
+inline bool operator>(const reverse_iterator<Iterator> &lhs,
+					  const reverse_iterator<Iterator> &rhs) { return rhs < lhs; }
+
+template<class Iterator>
+inline bool operator<=(const reverse_iterator<Iterator> &lhs,
+					   const reverse_iterator<Iterator> &rhs) { return !(rhs < lhs); }
+
+template<class Iterator>
+inline bool operator>=(const reverse_iterator<Iterator> &lhs,
+					   const reverse_iterator<Iterator> &rhs) { return !(lhs < rhs); }
+
 } // namespace tinystl
 
 #endif //TINYSTL__ITERATOR_H_
