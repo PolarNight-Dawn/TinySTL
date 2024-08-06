@@ -26,3 +26,4 @@
 
 ## 参考资料
 - 《STL源码剖析》by 候捷
+- GNU ISO C++ Library
