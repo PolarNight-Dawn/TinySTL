@@ -23,6 +23,7 @@
     - vector（vector.h）
     - list（list.h）
     - deque（deque.h）
+    - heap（heap.h）
 
 ## 参考资料
 - 《STL源码剖析》by 候捷
