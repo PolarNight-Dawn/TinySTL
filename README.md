@@ -24,6 +24,9 @@
     - list（list.h）
     - deque（deque.h）
     - heap（heap.h）
+  - 关联式容器 associative containers
+    - RB-tree（tree.h） 
+    - set/multiset（set.h）
 
 ## 参考资料
 - 《STL源码剖析》by 候捷
