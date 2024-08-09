@@ -27,6 +27,7 @@
   - 关联式容器 associative containers
     - RB-tree（tree.h） 
     - set/multiset（set.h）
+    - map/multimap（map.h）
 
 ## 参考资料
 - 《STL源码剖析》by 候捷
