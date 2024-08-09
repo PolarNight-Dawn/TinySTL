@@ -234,7 +234,7 @@ class rb_tree {
 																		 Allocator> &x);
 
  public:
-  Compare key_count() const { return key_compare; }
+  Compare key_comp() const { return key_compare; }
 
   /* iterator 相关操作 */
   iterator begin() noexcept { return leftmost(); }
