@@ -10,7 +10,6 @@
  * multiset：除了允许键值重复外，与 set 一致 */
 
 #include <functional>
-#include <bits/stl_set.h>
 
 #include "tree.h"
 
@@ -137,7 +136,7 @@ void swap(const set<Key, Compare, Allocator> &lhs, const set<Key, Compare, Alloc
   lhs.swap(rhs);
 }
 
-/************************************************************************************************************************/
+/********************************************************************************************************************/
 
 template<typename Key, typename Compare = std::less<Key>, typename Allocator = Alloc>
 class multiset {
@@ -170,7 +169,7 @@ class multiset {
   template<typename InputIterator>
   multiset(InputIterator first, InputIterator last, const Compare &comp) : rb_tree(comp) {
 	rb_tree.insert_equal(first,
-						  last);
+						 last);
   }
   explicit multiset(const set<Key, Compare, Alloc> &x) : rb_tree(x.rb_tree) {}
   multiset &operator=(const multiset &x) {
