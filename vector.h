@@ -5,6 +5,7 @@
 #ifndef TINYSTL__VECTOR_H_
 #define TINYSTL__VECTOR_H_
 
+#include <bits/stl_vector.h>
 #include "memory.h"
 #include "iterator.h"
 
@@ -15,90 +16,107 @@ class vector {
   using value_type = T;
   using pointer = T *;
   using const_pointer = const T *;
-  using iterator = T *;
-  using const_iterator = const T *;
   using reference = T &;
   using const_reference = const T &;
   using size_type = size_t;
   using difference_type = ptrdiff_t;
 
+  using iterator = T *;
+  using const_iterator = const T *;
+  using reverse_iterator = tinystl::reverse_iterator<iterator>;
+  using const_reverse_iterator = tinystl::reverse_iterator<const_iterator>;
+
  protected:
-  using data_allocator = alloc<value_type, Alloc>;
+  using data_allocator = alloc<value_type, Allocator>;
 
-  iterator start_;
-  iterator finish_;
-  iterator end_of_storage_;
+  iterator start;
+  iterator finish;
+  iterator end_of_storage;
 
-  void insert_aux(iterator position, const_reference value);
-  void deallocate() { if (start_) data_allocator::deallocate(start_, end_of_storage_ - start_); }
-  void fill_init(size_type n, const_reference value);
+  void insert_aux(iterator position, const value_type &value);
+  void deallocate() { if (this->start) data_allocator::deallocate(this->start, this->end_of_storage - this->start); }
+  void fill_init(size_type n, const value_type &value);
   template<typename InputIterator>
   void copy_init(InputIterator first, InputIterator last);
 
  public:
-  vector() : start_(0), finish_(0), end_of_storage_(0) {}
-  vector(size_type n, const_reference value) { fill_init(n, value); }
-  vector(int n, const_reference value) { fill_init(n, value); }
-  vector(long n, const_reference value) { fill_init(n, value); }
-  explicit vector(size_type n) { fill_init(n, T()); }
-  explicit vector(const vector<T> &vec) { copy_init(vec.begin(), vec.end()); }
+  vector() : start(nullptr), finish(nullptr), end_of_storage(nullptr) {}
+  explicit vector(size_type n) { fill_init(n, value_type()); }
+  vector(size_type n, const value_type &value) { fill_init(n, value); }
   template<typename InputIterator>
   vector(InputIterator first, InputIterator last) { copy_init(first, last); }
-  vector(std::initializer_list<T> rhs) { copy_init(rhs.begin(), rhs.end()); }
+  explicit vector(const vector<value_type> &rhs) { copy_init(rhs.begin(), rhs.end()); }
+  vector(std::initializer_list<value_type> rhs) { copy_init(rhs.begin(), rhs.end()); }
 
   ~vector() {
-	destroy(start_, finish_);
+	destroy(this->start, this->finish);
 	deallocate();
   }
 
-  vector<T, Allocator> &operator=(const vector<T, Allocator> &vec);
-  vector<T, Allocator> &operator=(std::initializer_list<T> rhs);
+  vector &operator=(const vector &vec);
+  vector &operator=(vector &&rhs) noexcept;
+  vector &operator=(std::initializer_list<value_type> rhs);
 
   /* iterator 相关操作 */
-  iterator begin() noexcept { return start_; }
-  const_iterator begin() const noexcept { return start_; }
-  iterator end() noexcept { return finish_; }
-  const_iterator end() const noexcept { return finish_; }
+  iterator begin() noexcept { return this->start; }
+  const_iterator begin() const noexcept { return this->start; }
+  iterator end() noexcept { return this->finish; }
+  const_iterator end() const noexcept { return this->finish; }
+  reverse_iterator rbegin() noexcept { return static_cast<reverse_iterator>(end()); }
+  const_reverse_iterator rbegin() const noexcept { return static_cast<const_reverse_iterator>(end()); }
+  reverse_iterator rend() noexcept { return static_cast<reverse_iterator>(begin()); }
+  const_reverse_iterator rend() const noexcept { return static_cast<const_reverse_iterator>(begin()); }
+
+  const_iterator cbegin() const noexcept { return begin(); }
+  const_iterator cend() const noexcept { return end(); }
+  const_reverse_iterator crbegin() const noexcept { return rbegin(); }
+  const_reverse_iterator crend() const noexcept { return rend(); }
 
   /* capacity 相关操作 */
-  size_type size() const { return static_cast<size_type >(end() - begin()); }
-  size_type max_size() const { return static_cast<size_type >(-1) / sizeof(T); }
-  size_type capacity() const { return static_cast<size_type >(end_of_storage_ - begin()); }
-  bool empty() const { return begin() == end(); }
+  size_type size() const noexcept { return static_cast<size_type >(end() - begin()); }
+  size_type max_size() const noexcept { return static_cast<size_type >(-1) / sizeof(T); }
+  size_type capacity() const noexcept { return static_cast<size_type >(this->end_of_storage - begin()); }
+  bool empty() const noexcept { return begin() == end(); }
   void reserve(size_type n);
 
-  /* 访问相关操作 */
-  reference front() { return *begin(); }
-  const_reference front() const { return *begin(); }
-  reference back() { return *(end() - 1); } // [begin(), end())
-  const_reference back() const { return *(end() - 1); }
-  reference operator[](size_type n) { return *(begin() + n); }
-  const_reference operator[](size_type n) const { return *(begin() + n); }
+  /* access 相关操作 */
+  reference front() noexcept { return *begin(); }
+  const_reference front() const noexcept { return *begin(); }
+  reference back() noexcept { return *(end() - 1); } // [begin(), end())
+  const_reference back() const noexcept { return *(end() - 1); }
+  reference operator[](size_type n) noexcept { return *(begin() + n); }
+  const_reference operator[](size_type n) const noexcept { return *(begin() + n); }
 
   /* container 相关操作 */
-  void push_back(const T &value);
+  template<class... Args>
+  iterator emplace(const_iterator pos, Args &&...args);
+  template<class... Args>
+  void emplace_back(Args &&...args);
+  void push_back(const value_type &value);
+  void push_back(value_type &&value) { emplace_back(std::move(value)); }
   void pop_back();
-  void swap(vector<T, Allocator> &rhs);
-  iterator insert(iterator position, const T &value);
-  iterator insert(iterator position) { return insert(position, T()); }
-  void insert(iterator position, size_type n, const T &value);
+  void swap(vector<value_type, Allocator> &rhs);
+  iterator insert(iterator position, const value_type &value);
+  iterator insert(iterator position) { return insert(position, value_type()); }
+  iterator insert(const_iterator pos, value_type &&value) { return emplace(pos, std::move(value)); }
+  void insert(iterator position, size_type n, const value_type &value);
   iterator erase(iterator position);
   iterator erase(iterator first, iterator last);
-  void resize(size_type new_size, const T &value);
-  void resize(size_type new_size) { resize(new_size, T()); }
-  void clear() { erase(start_, finish_); }
+  void resize(size_type new_size, const value_type &value);
+  void resize(size_type new_size) { resize(new_size, value_type()); }
+  void clear() { erase(this->start, this->finish); }
 };
 
 template<typename T, typename Allocator>
 void vector<T, Allocator>::fill_init(size_type n, const T &value) {
-  start_ = data_allocator::allocate(n);
+  this->start = data_allocator::allocate(n);
   try {
-	uninitialized_fill_n(start_, n, value);
-	finish_ = start_ + n;
-	end_of_storage_ = finish_;
+	uninitialized_fill_n(this->start, n, value);
+	this->finish = this->start + n;
+	this->end_of_storage = this->finish;
   }
   catch (...) {
-	data_allocator::deallocate(start_, n);
+	data_allocator::deallocate(this->start, n);
   }
 }
 
@@ -106,25 +124,25 @@ template<typename T, typename Allocator>
 template<typename InputIterator>
 void vector<T, Allocator>::copy_init(InputIterator first, InputIterator last) {
   size_type n = last - first;
-  start_ = data_allocator::allocate(n);
+  this->start = data_allocator::allocate(n);
   try {
-	uninitialized_copy(first, last, start_);
-	finish_ = start_ + n;
-	end_of_storage_ = finish_;
+	uninitialized_copy(first, last, this->start);
+	this->finish = this->start + n;
+	this->end_of_storage = this->finish;
   }
   catch (...) {
-	data_allocator::deallocate(start_, n);
+	data_allocator::deallocate(this->start, n);
 	throw;
   }
 }
 
 template<typename T, typename Allocator>
 void vector<T, Allocator>::insert_aux(iterator position, const T &value) {
-  if (finish_ != end_of_storage_) {
-	construct(finish_, *(finish_ - 1));
-	++finish_;
+  if (this->finish != this->end_of_storage) {
+	construct(this->finish, *(this->finish - 1));
+	++this->finish;
 	T x_copy = value;
-	std::copy_backward(position, finish_ - 2, finish_ - 1);
+	std::copy_backward(position, this->finish - 2, this->finish - 1);
 	*position = x_copy;
   } else {
 	const size_type old_size = size();
@@ -132,43 +150,43 @@ void vector<T, Allocator>::insert_aux(iterator position, const T &value) {
 	iterator new_start = data_allocator::allocate(new_size);
 	iterator new_finish = new_start;
 	try {
-	  new_finish = uninitialized_copy(start_, position, new_start);
+	  new_finish = uninitialized_copy(this->start, position, new_start);
 	  construct(new_finish++, value);
-	  new_finish = uninitialized_copy(position, finish_, new_finish);
+	  new_finish = uninitialized_copy(position, this->finish, new_finish);
 	}
 	catch (...) {
 	  destroy(new_start, new_finish);
 	  data_allocator::deallocate(new_start, new_size);
 	  throw;
 	}
-	destroy(start_, finish_);
+	destroy(this->start, this->finish);
 	deallocate();
-	start_ = new_start;
-	finish_ = new_finish;
-	end_of_storage_ = start_ + new_size;
+	this->start = new_start;
+	this->finish = new_finish;
+	this->end_of_storage = this->start + new_size;
   }
 }
 
 /* vector 其余接口实现 */
 // 等号操作符的重载
 template<typename T, typename Allocator>
-vector<T, Allocator> &vector<T, Allocator>::operator=(const vector<T, Allocator> &vec) {
-  if (&vec != this) {
-	size_type new_size = vec.size();
+vector<T, Allocator> &vector<T, Allocator>::operator=(const vector<T, Allocator> &rhs) {
+  if (&rhs != this) {
+	size_type new_size = rhs.size();
 	if (new_size > capacity()) {
 	  iterator new_start = data_allocator::allocate(new_size);
-	  end_of_storage_ = uninitialized_copy(vec.begin(), vec.end(), new_start);
-	  destroy(start_, finish_);
+	  this->end_of_storage = uninitialized_copy(rhs.begin(), rhs.end(), new_start);
+	  destroy(this->start, this->finish);
 	  deallocate();
-	  start_ = new_start;
+	  this->start = new_start;
 	} else if (new_size < size()) {
-	  iterator iter = std::copy(vec.begin(), vec.end(), start_);
-	  destroy(iter, finish_);
+	  iterator iter = std::copy(rhs.begin(), rhs.end(), this->start);
+	  destroy(iter, this->finish);
 	} else {
-	  std::copy(vec.begin(), vec.begin() + size(), start_);
-	  uninitialized_copy(vec.begin() + size(), vec.end(), finish_);
+	  std::copy(rhs.begin(), rhs.begin() + size(), this->start);
+	  uninitialized_copy(rhs.begin() + size(), rhs.end(), this->finish);
 	}
-	finish_ = start_ + new_size;
+	this->finish = this->start + new_size;
   }
   return *this;
 }
@@ -181,96 +199,129 @@ vector<T, Allocator> &vector<T, Allocator>::operator=(std::initializer_list<T> r
 }
 
 template<typename T, typename Allocator>
+template<class ...Args>
+typename vector<T, Allocator>::iterator
+vector<T, Allocator>::emplace(const_iterator pos, Args &&...args) {
+  iterator xpos = const_cast<iterator>(pos);
+  const size_type n = xpos - this->begin;
+  if (this->end_of != this->end_of_storage && xpos == this->end_of) {
+	data_allocator::construct(std::addressof(*this->end_of), std::forward<Args>(args)...);
+	++this->end_of;
+  } else if (this->end_of != this->end_of_storage) {
+	auto new_end = this->end_of;
+	data_allocator::construct(std::addressof(*this->end_of), *(this->end_of - 1));
+	++new_end;
+	std::copy_backward(xpos, this->end_of - 1, this->end_of);
+	*xpos = value_type(std::forward<Args>(args)...);
+	this->end_of = new_end;
+  } else {
+	reallocate_emplace(xpos, std::forward<Args>(args)...);
+  }
+  return begin() + n;
+}
+
+template<typename T, typename Allocator>
+template<class ...Args>
+void vector<T, Allocator>::emplace_back(Args &&...args) {
+  if (this->end_of < this->end_of_storage) {
+	data_allocator::construct(std::addressof(*this->end_of), std::forward<Args>(args)...);
+	++this->end_of;
+  } else {
+	reallocate_emplace(this->end_of, std::forward<Args>(args)...);
+  }
+}
+
+template<typename T, typename Allocator>
 void vector<T, Allocator>::push_back(const T &value) {
-  if (finish_ != end_of_storage_)
-	construct(finish_++, value);
+  if (this->finish != this->end_of_storage)
+	construct(this->finish++, value);
   else
-	insert_aux(finish_, value);
+	insert_aux(this->finish, value);
 }
 
 template<typename T, typename Allocator>
 void vector<T, Allocator>::pop_back() {
-  --finish_;
-  destroy(finish_);
+  --this->finish;
+  destroy(this->finish);
 }
 
 template<typename T, typename Allocator>
 void vector<T, Allocator>::swap(vector<T, Allocator> &rhs) {
-  std::swap(start_, rhs.start_);
-  std::swap(finish_, rhs.finish_);
-  std::swap(end_of_storage_, rhs.end_of_storage_);
+  std::swap(this->start, rhs.start);
+  std::swap(this->finish, rhs.finish);
+  std::swap(this->end_of_storage, rhs.end_of_storage);
 }
 
 template<typename T, typename Allocator>
 typename vector<T, Allocator>::iterator vector<T, Allocator>::insert(iterator pos, const T &value) {
-  size_type n = pos - start_;
-  if (finish_ != end_of_storage_ && pos == finish_)
-	construct(finish_++, value);
+  size_type n = pos - this->start;
+  if (this->finish != this->end_of_storage && pos == this->finish)
+	construct(this->finish++, value);
   else insert_aux(pos, value);
-  return start_ + n;
+  return this->start + n;
 }
 
 template<typename T, typename Allocator>
 void vector<T, Allocator>::insert(iterator pos, size_type n, const T &value) {
   if (n == 0) return;
   if (size() + n < capacity()) {
-	const size_type elems_after = finish_ - pos;
+	const size_type elems_after = this->finish - pos;
 	if (elems_after > n) {
-	  uninitialized_copy(finish_ - n, finish_, finish_);
-	  std::copy_backward(pos, finish_ - n, finish_);
+	  uninitialized_copy(this->finish - n, this->finish, this->finish);
+	  std::copy_backward(pos, this->finish - n, this->finish);
 	  std::fill(pos, pos + n, value);
 	} else {
-	  uninitialized_fill_n(finish_, n - elems_after, value);
-	  uninitialized_copy(pos, finish_, pos + n);
-	  std::fill(pos, finish_, value);
+	  uninitialized_fill_n(this->finish, n - elems_after, value);
+	  uninitialized_copy(pos, this->finish, pos + n);
+	  std::fill(pos, this->finish, value);
 	}
-	finish_ += n;
+	this->finish += n;
   } else {
 	const size_type old_size = size();
 	const size_type new_size = old_size + old_size > n ? old_size : n;
 	iterator new_start = data_allocator::allocate(new_size);
 	iterator new_finish = new_start;
 	try {
-	  new_finish = uninitialized_copy(start_, pos, new_start);
+	  new_finish = uninitialized_copy(this->start, pos, new_start);
 	  new_finish = uninitialized_fill_n(new_finish, n, value);
-	  new_finish = uninitialized_copy(pos, finish_, new_finish);
+	  new_finish = uninitialized_copy(pos, this->finish, new_finish);
 	}
 	catch (...) {
 	  destroy(new_start, new_finish);
 	  data_allocator::deallocate(new_start, new_size);
 	  throw;
 	}
-	destroy(start_, finish_);
+	destroy(this->start, this->finish);
 	deallocate();
-	start_ = new_start;
-	finish_ = new_finish;
-	end_of_storage_ = new_start + new_size;
+	this->start = new_start;
+	this->finish = new_finish;
+	this->end_of_storage = new_start + new_size;
   }
 }
 
 template<typename T, typename Allocator>
 typename vector<T, Allocator>::iterator vector<T, Allocator>::erase(iterator pos) {
-  if (pos != (finish_ - 1))
-	std::copy(pos + 1, finish_, pos);
-  destroy(finish_ - 1);
-  --finish_;
+  if (pos != (this->finish - 1))
+	std::copy(pos + 1, this->finish, pos);
+  destroy(this->finish - 1);
+  --this->finish;
   return pos;
 }
 
 template<typename T, typename Allocator>
 typename vector<T, Allocator>::iterator vector<T, Allocator>::erase(iterator first, iterator last) {
-  iterator new_finish = std::copy(last, finish_, first);
-  destroy(new_finish, finish_);
-  finish_ = new_finish;
+  iterator new_finish = std::copy(last, this->finish, first);
+  destroy(new_finish, this->finish);
+  this->finish = new_finish;
   return first;
 }
 
 template<typename T, typename Allocator>
 void vector<T, Allocator>::resize(size_type new_size, const T &value) {
   if (new_size < size())
-	erase(start_ + new_size, finish_);
+	erase(this->start + new_size, this->finish);
   else
-	insert(finish_, new_size - size(), value);
+	insert(this->finish, new_size - size(), value);
 }
 
 template<typename T, typename Allocator>
@@ -279,17 +330,17 @@ void vector<T, Allocator>::reserve(size_type n) {
 	iterator new_start = data_allocator::allocate(n);
 	iterator new_finish = new_start;
 	try {
-	  new_finish = uninitialized_copy(start_, finish_, new_start);
+	  new_finish = uninitialized_copy(this->start, this->finish, new_start);
 	}
 	catch (...) {
 	  destroy(new_start, new_finish);
 	  data_allocator::deallocate(new_start, n);
 	}
-	destroy(start_, finish_);
+	destroy(this->start, this->finish);
 	deallocate();
-	start_ = new_start;
-	finish_ = new_finish;
-	end_of_storage_ = start_ + n;
+	this->start = new_start;
+	this->finish = new_finish;
+	this->end_of_storage = this->start + n;
   }
 }
 
@@ -315,6 +366,7 @@ template<typename T, typename Allocator>
 inline void swap(vector<T, Allocator> &lhs, vector<T, Allocator> &rhs) {
   lhs.swap(rhs);
 }
-}
+
+} // namespace tinystl
 
 #endif //TINYSTL__VECTOR_H_
