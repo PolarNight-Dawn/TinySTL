@@ -33,11 +33,15 @@ class vector {
   iterator finish;
   iterator end_of_storage;
 
+  void destroy_and_recover(iterator first, iterator last, size_type n);
+  size_type get_new_cap(size_type add_size);
   void insert_aux(iterator position, const value_type &value);
   void deallocate() { if (this->start) data_allocator::deallocate(this->start, this->end_of_storage - this->start); }
   void fill_init(size_type n, const value_type &value);
   template<typename InputIterator>
   void copy_init(InputIterator first, InputIterator last);
+  template<typename ... Args>
+  void reallocate_emplace(iterator pos, Args &&...args);
 
  public:
   vector() : start(nullptr), finish(nullptr), end_of_storage(nullptr) {}
@@ -88,9 +92,9 @@ class vector {
   const_reference operator[](size_type n) const noexcept { return *(begin() + n); }
 
   /* container 相关操作 */
-  template<class... Args>
+  template<typename ... Args>
   iterator emplace(const_iterator pos, Args &&...args);
-  template<class... Args>
+  template<typename ... Args>
   void emplace_back(Args &&...args);
   void push_back(const value_type &value);
   void push_back(value_type &&value) { emplace_back(std::move(value)); }
@@ -137,6 +141,23 @@ void vector<T, Allocator>::copy_init(InputIterator first, InputIterator last) {
 }
 
 template<typename T, typename Allocator>
+void vector<T, Allocator>::destroy_and_recover(iterator first, iterator last, size_type n) {
+  data_allocator::destroy(first, last);
+  data_allocator::deallocate(first, n);
+}
+
+template<typename T, typename Allocator>
+typename vector<T, Allocator>::size_type vector<T, Allocator>::get_new_cap(size_type add_size) {
+  const auto old_size = capacity();
+  if (old_size > max_size() - old_size / 2)
+	return old_size + add_size > max_size() - 16 ? old_size + add_size : old_size + add_size + 16;
+  const size_type new_size =
+	  old_size == 0 ? std::max(add_size, static_cast<size_type>(16)) : std::max(old_size + old_size / 2,
+																				old_size + add_size);
+  return new_size;
+}
+
+template<typename T, typename Allocator>
 void vector<T, Allocator>::insert_aux(iterator position, const T &value) {
   if (this->finish != this->end_of_storage) {
 	construct(this->finish, *(this->finish - 1));
@@ -165,6 +186,29 @@ void vector<T, Allocator>::insert_aux(iterator position, const T &value) {
 	this->finish = new_finish;
 	this->end_of_storage = this->start + new_size;
   }
+}
+
+template<typename T, typename Allocator>
+template<class ...Args>
+void vector<T, Allocator>::
+reallocate_emplace(iterator pos, Args &&...args) {
+  const auto new_size = get_new_cap(1);
+  auto new_begin = data_allocator::allocate(new_size);
+  auto new_end = new_begin;
+  try {
+	new_end = std::uninitialized_move(start, pos, new_begin);
+	data_allocator::construct(std::addressof(*new_end), std::forward<Args>(args)...);
+	++new_end;
+	new_end = std::uninitialized_move(pos, finish, new_end);
+  }
+  catch (...) {
+	data_allocator::deallocate(new_begin, new_size);
+	throw;
+  }
+  destroy_and_recover(start, finish, end_of_storage - start);
+  start = new_begin;
+  finish = new_end;
+  end_of_storage = new_begin + new_size;
 }
 
 /* vector 其余接口实现 */
@@ -204,16 +248,16 @@ typename vector<T, Allocator>::iterator
 vector<T, Allocator>::emplace(const_iterator pos, Args &&...args) {
   iterator xpos = const_cast<iterator>(pos);
   const size_type n = xpos - this->begin;
-  if (this->end_of != this->end_of_storage && xpos == this->end_of) {
-	data_allocator::construct(std::addressof(*this->end_of), std::forward<Args>(args)...);
-	++this->end_of;
-  } else if (this->end_of != this->end_of_storage) {
-	auto new_end = this->end_of;
-	data_allocator::construct(std::addressof(*this->end_of), *(this->end_of - 1));
+  if (this->finish != this->end_of_storage && xpos == this->finish) {
+	data_allocator::construct(std::addressof(*this->finish), std::forward<Args>(args)...);
+	++this->finish;
+  } else if (this->finish != this->end_of_storage) {
+	auto new_end = this->finish;
+	data_allocator::construct(std::addressof(*this->finish), *(this->finish - 1));
 	++new_end;
-	std::copy_backward(xpos, this->end_of - 1, this->end_of);
+	std::copy_backward(xpos, this->finish - 1, this->finish);
 	*xpos = value_type(std::forward<Args>(args)...);
-	this->end_of = new_end;
+	this->finish = new_end;
   } else {
 	reallocate_emplace(xpos, std::forward<Args>(args)...);
   }
@@ -223,11 +267,11 @@ vector<T, Allocator>::emplace(const_iterator pos, Args &&...args) {
 template<typename T, typename Allocator>
 template<class ...Args>
 void vector<T, Allocator>::emplace_back(Args &&...args) {
-  if (this->end_of < this->end_of_storage) {
-	data_allocator::construct(std::addressof(*this->end_of), std::forward<Args>(args)...);
-	++this->end_of;
+  if (this->finish < this->end_of_storage) {
+	data_allocator::construct(std::addressof(*this->finish), std::forward<Args>(args)...);
+	++this->finish;
   } else {
-	reallocate_emplace(this->end_of, std::forward<Args>(args)...);
+	reallocate_emplace(this->finish, std::forward<Args>(args)...);
   }
 }
 
