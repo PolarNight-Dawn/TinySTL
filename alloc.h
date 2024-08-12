@@ -270,7 +270,7 @@ void *default_alloc::reallocate(void *ptr, size_t old_size, size_t new_size) {
 }
 
 #ifdef DIRECT_USE_MALLOC
-using Alloc = default_alloc;
+using Alloc = malloc_alloc;
 #else
 using Alloc = default_alloc;
 #endif

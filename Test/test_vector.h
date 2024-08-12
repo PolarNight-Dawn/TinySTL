@@ -73,6 +73,7 @@ void vector_test() {
   std::cout << "[----------------------- end API test "
 			   "---------------------------]\n";
 }
+
 } //namespace tinystl
 
 #endif //TINYSTL_TEST_TEST_VECTOR_H_
