@@ -22,7 +22,7 @@ template<typename InputIterator, typename ForwardIterator>
 inline ForwardIterator uninitialized_copy_aux(InputIterator first,
 											  InputIterator last,
 											  ForwardIterator result,
-											  std::true_type) {
+											  _true_type) {
   return std::copy(first, last, result);
 }
 
@@ -30,7 +30,7 @@ template<typename InputIterator, typename ForwardIterator>
 inline ForwardIterator uninitialized_copy_aux(InputIterator first,
 											  InputIterator last,
 											  ForwardIterator result,
-											  std::false_type) {
+											  _false_type) {
   ForwardIterator cur = result;
   try {
 	for (; first != last; ++first, ++cur)
@@ -42,16 +42,24 @@ inline ForwardIterator uninitialized_copy_aux(InputIterator first,
   }
 }
 
+/*
+template<typename InputIterator, typename ForwardIterator>
+inline ForwardIterator uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result) {
+  using value_type = typename tinystl::iterator_traits<ForwardIterator>::value_type;
+  using is_POD = typename type_traits<value_type>::is_POD_type;
+  return uninitialized_copy_aux(first, last, result, is_POD());
+}
+*/
+
 template<typename InputIterator, typename ForwardIterator, typename T>
-inline ForwardIterator uninitialized_copy_POD(InputIterator first, InputIterator last, ForwardIterator result, T *) {
+inline ForwardIterator uninitialized_copy_POD(InputIterator first, InputIterator last, ForwardIterator result, T*) {
   using is_POD = typename type_traits<T>::is_POD_type;
   return uninitialized_copy_aux(first, last, result, is_POD());
 }
 
 template<typename InputIterator, typename ForwardIterator>
 inline ForwardIterator uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator result) {
-  using value_type = typename tinystl::iterator_traits<ForwardIterator>::value_type;
-  return uninitialized_copy_POD(first, last, result, value_type(result));
+  return uninitialized_copy_POD(first, last, result, value_type(first));
 }
 
 inline char *uninitialized_copy(const char *first, const char *last, char *result) {
@@ -66,18 +74,18 @@ inline wchar_t *uninitialized_copy(const wchar_t *first, const wchar_t *last, wc
 
 /* uninitialized_fill() */
 template<typename ForwardIterator, typename T>
-inline ForwardIterator uninitialized_fill_aux(ForwardIterator first,
-											  ForwardIterator last,
-											  const T &x,
-											  std::true_type) {
+inline void uninitialized_fill_aux(ForwardIterator first,
+								   ForwardIterator last,
+								   const T &x,
+								   _true_type) {
   return std::fill(first, last, x);
 }
 
 template<typename ForwardIterator, typename T>
-inline ForwardIterator uninitialized_fill_aux(ForwardIterator first,
-											  ForwardIterator last,
-											  const T &x,
-											  std::false_type) {
+inline void uninitialized_fill_aux(ForwardIterator first,
+								   ForwardIterator last,
+								   const T &x,
+								   _false_type) {
   ForwardIterator cur = first;
   try {
 	for (; cur != last; ++cur)
@@ -89,16 +97,24 @@ inline ForwardIterator uninitialized_fill_aux(ForwardIterator first,
   }
 }
 
+/*
+template<typename ForwardIterator, typename T>
+inline void uninitialized_fill(ForwardIterator first, ForwardIterator last, const T &x) {
+  using value_type = typename tinystl::iterator_traits<ForwardIterator>::value_type;
+  using is_POD = typename type_traits<value_type>::is_POD_type;
+  return uninitialized_fill_aux(first, last, x, is_POD());
+}
+*/
+
 template<typename ForwardIterator, typename T, typename T1>
 inline void uninitialized_fill_POD(ForwardIterator first, ForwardIterator last, const T &x, T1 *) {
   using is_POD = typename type_traits<T1>::is_POD_type;
-  return uninitialized_fill_aux(first, last, x, is_POD());
+  uninitialized_fill_aux(first, last, x, is_POD());
 }
 
 template<typename ForwardIterator, typename T>
 inline void uninitialized_fill(ForwardIterator first, ForwardIterator last, const T &x) {
-  using value_type = typename tinystl::iterator_traits<ForwardIterator>::value_type;
-  return uninitialized_fill_POD(first, last, x, value_type(first));
+  uninitialized_fill(first, last, x, value_type(first));
 }
 
 /* uninitialized_fill_n() */
@@ -106,7 +122,7 @@ template<typename ForwardIterator, typename Size, typename T>
 inline ForwardIterator uninitialized_fill_n_aux(ForwardIterator first,
 												Size n,
 												const T &x,
-												std::true_type) {
+												_true_type) {
   return std::fill_n(first, n, x);
 }
 
@@ -114,7 +130,7 @@ template<typename ForwardIterator, typename Size, typename T>
 inline ForwardIterator uninitialized_fill_n_aux(ForwardIterator first,
 												Size n,
 												const T &x,
-												std::false_type) {
+												_false_type) {
   ForwardIterator cur = first;
   try {
 	for (; n != 0; --n, ++cur)
@@ -126,15 +142,23 @@ inline ForwardIterator uninitialized_fill_n_aux(ForwardIterator first,
   }
 }
 
+/*
+template<typename ForwardIterator, typename Size, typename T>
+inline ForwardIterator uninitialized_fill_n(ForwardIterator first, Size n, const T &x) {
+  using value_type = typename iterator_traits<ForwardIterator>::value_type;
+  using is_POD = typename type_traits<value_type>::is_POD_type;
+  return uninitialized_fill_n_aux(first, n, x, is_POD());
+}
+*/
+
 template<typename ForwardIterator, typename Size, typename T, typename T1>
-inline void uninitialized_fill_n_POD(ForwardIterator first, Size n, const T &x, T1 *) {
+inline ForwardIterator uninitialized_fill_n_POD(ForwardIterator first, Size n, const T &x, T1 *) {
   using is_POD = typename type_traits<T1>::is_POD_type;
   return uninitialized_fill_n_aux(first, n, x, is_POD());
 }
 
 template<typename ForwardIterator, typename Size, typename T>
-inline void uninitialized_fill_n(ForwardIterator first, Size n, const T &x) {
-  using value_type = typename tinystl::iterator_traits<ForwardIterator>::value_type;
+inline ForwardIterator uninitialized_fill_n(ForwardIterator first, Size n, const T &x) {
   return uninitialized_fill_n_POD(first, n, x, value_type(first));
 }
 
