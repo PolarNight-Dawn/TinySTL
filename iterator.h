@@ -59,11 +59,11 @@ struct iterator_traits<const T *> {
   using iterator_category = random_access_iterator_tag;
   using value_type = T;
   using difference_type = ptrdiff_t;
-  using pointer = T *;
-  using reference = T &;
+  using pointer = const T *;
+  using reference = const T &;
 };
 
-/* 萃取 iterator 的 category */
+/* 更加方便地萃取 iterator 的 category */
 template<typename Iterator>
 inline typename iterator_traits<Iterator>::iterator_category
 iterator_category(const Iterator &) {
@@ -71,18 +71,18 @@ iterator_category(const Iterator &) {
   return category();
 }
 
-/* 萃取 iterator 的 difference_type */
+/* 更加方便地萃取 iterator 的 difference_type */
 template<typename Iterator>
 inline typename iterator_traits<Iterator>::difference_type *
 difference_type(const Iterator &) {
-  return static_cast<typename iterator_traits<Iterator>::difference_type *>(0);
+  return static_cast<typename iterator_traits<Iterator>::difference_type *>(nullptr);
 }
 
-/* 萃取 iterator 的 value_type */
+/* 更加方便地萃取 iterator 的 value_type */
 template<typename Iterator>
 inline typename iterator_traits<Iterator>::value_type *
 value_type(const Iterator &) {
-  return static_cast<typename iterator_traits<Iterator>::value_type *>(0);
+  return static_cast<typename iterator_traits<Iterator>::value_type *>(nullptr);
 }
 
 /* distance() 系列函数
@@ -92,7 +92,7 @@ value_type(const Iterator &) {
 template<typename InputIterator>
 inline typename iterator_traits<InputIterator>::difference_type
 distance_aux(InputIterator first, InputIterator last, input_iterator_tag) {
-  typename iterator_traits<InputIterator>::difference_type n = 0;
+  typename iterator_traits<InputIterator>::difference_type n = nullptr;
   for (; first != last; ++first, ++n);
   return n;
 }
@@ -135,16 +135,16 @@ inline void distance(InputIterator first, InputIterator last, Distance &n) {
 /* advance 的 input_iterator_tag 的版本 */
 template<typename InputIterator, typename Distance>
 inline void advance_aux(InputIterator iter, const Distance &n, input_iterator_tag) {
-  for (; n != 0; --n, ++iter);
+  for (; n != nullptr; --n, ++iter);
 }
 
 /* advance 的 bidirectional_iterator_tag 的版本 */
 template<typename BidirectionalIterator, typename Distance>
 inline void advance_aux(BidirectionalIterator iter, const Distance &n, bidirectional_iterator_tag) {
-  if (n >= 0)
-	for (; n != 0; --n, ++iter);
+  if (n >= nullptr)
+	for (; n != nullptr; --n, ++iter);
   else
-	for (; n != 0; ++n, --iter);
+	for (; n != nullptr; ++n, --iter);
 }
 
 /* advance 的 random_access_iterator_tag 的版本 */
@@ -168,11 +168,11 @@ class reverse_iterator {
   Iterator current;
 
  public:
-  using iterator_category = typename Iterator::iterator_category;
-  using value_type = typename Iterator::value_type;
-  using difference_type = typename Iterator::difference_type;
-  using pointer = typename Iterator::pointer;
-  using reference = typename Iterator::reference;
+  using iterator_category = typename iterator_traits<Iterator>::iterator_category;
+  using value_type = typename iterator_traits<Iterator>::value_type;
+  using difference_type = typename iterator_traits<Iterator>::difference_type;
+  using pointer = typename iterator_traits<Iterator>::pointer;
+  using reference = typename iterator_traits<Iterator>::reference;
 
   using iterator_type = Iterator;
   using self = reverse_iterator<Iterator>;
@@ -184,8 +184,8 @@ class reverse_iterator {
 
  public:
   iterator_type base() const { return current; }
-  reference operator*() const { // 实际对应正向迭代器的前一个位置
-	auto tmp = current;
+  constexpr reference operator*() const { // 实际对应正向迭代器的前一个位置
+	Iterator tmp = current;
 	return *--tmp;
   }
   pointer operator->() const { return &(operator*()); }
