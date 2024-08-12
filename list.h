@@ -72,6 +72,8 @@ class list {
   using link_type = list_node *;
   using iterator = list_iterator<T, T &, T *>;
   using const_iterator = const list_iterator<T, T &, T *>;
+  using reverse_iterator = tinystl::reverse_iterator<iterator>;
+  using const_reverse_iterator = tinystl::reverse_iterator<const_iterator>;
 
   using iterator_categry = bidirectional_iterator_tag;
   using value_type = T;
@@ -109,10 +111,17 @@ class list {
   /* iterator 相关操作 */
   iterator begin() noexcept { return node->next; }
   const_iterator begin() const noexcept { return node->next; }
-  const_iterator cbegin() const noexcept { return begin(); }
   iterator end() noexcept { return node; }
   const_iterator end() const noexcept { return node; }
+  reverse_iterator rbegin() noexcept { return static_cast<reverse_iterator>(end()); }
+  const_reverse_iterator rbegin() const noexcept { return static_cast<reverse_iterator>(end()); }
+  reverse_iterator rend() noexcept { return static_cast<reverse_iterator>(begin()); }
+  const_reverse_iterator rend() const noexcept { return static_cast<reverse_iterator>(begin()); }
+
+  const_iterator cbegin() const noexcept { return begin(); }
   const_iterator cend() const noexcept { return end(); }
+  const_reverse_iterator crbegin() const noexcept { return rbegin(); }
+  const_reverse_iterator crend() const noexcept { return rend(); }
 
   /* container 相关操作 */
   bool empty() const noexcept { return node->next == node; }
@@ -124,32 +133,32 @@ class list {
   const_reference front() const { return node->next->data; }
   reference back() { return node->prev->data; }
   const_reference back() const { return node->prev->data; }
-  reference operator[](const size_type& n);
+  reference operator[](const size_type &n);
 
   /* 修改链表操作 */
-  void swap(list<T, Alloc>& rhs) { std::swap(node, rhs.node); }
-  iterator insert(iterator pos, const T& value);
+  void swap(list<T, Alloc> &rhs) { std::swap(node, rhs.node); }
+  iterator insert(iterator pos, const T &value);
   iterator insert(iterator pos);
-  template <typename InputIterator>
+  template<typename InputIterator>
   void insert(iterator pos, InputIterator first, InputIterator last);
-  void insert(iterator pos, size_type n, const T& value);
-  void insert(iterator pos, int n, const T& value);
-  void insert(iterator pos, long n, const T& value);
-  void push_front(const T& value) { insert(begin(), value); }
-  void push_back(const T& value) { insert(end(), value); }
+  void insert(iterator pos, size_type n, const T &value);
+  void insert(iterator pos, int n, const T &value);
+  void insert(iterator pos, long n, const T &value);
+  void push_front(const T &value) { insert(begin(), value); }
+  void push_back(const T &value) { insert(end(), value); }
   iterator erase(iterator pos);
   iterator erase(iterator first, iterator last);
-  void resize(size_type new_size, const T& value);
+  void resize(size_type new_size, const T &value);
   void resize(size_type new_size) { resize(new_size, T()); }
   void clear() { erase(begin(), end()); }
   void pop_front() { erase(begin()); }
   void pop_back() { erase(--end()); }
-  void splice(iterator pos, list& x);
-  void splice(iterator pos, list&, iterator i);
-  void splice(iterator pos, list&, iterator first, iterator last);
-  void remove(const T& value);
+  void splice(iterator pos, list &x);
+  void splice(iterator pos, list &, iterator i);
+  void splice(iterator pos, list &, iterator first, iterator last);
+  void remove(const T &value);
   void unique();
-  void merge(list& x);
+  void merge(list &x);
   void reverse();
   void sort();
 };
@@ -227,5 +236,211 @@ list<T, Allocator> &list<T, Allocator>::operator=(std::initializer_list<T> rhs) 
   }
 }
 
+template <typename T, typename Alloc>
+typename list<T, Alloc>::reference list<T, Alloc>::operator[](const size_type& n) {
+  return *(begin() + n);
 }
+
+template <typename T, typename Alloc>
+typename list<T, Alloc>::iterator list<T, Alloc>::insert(iterator pos,
+														 const T& value) {
+  link_type tmp = create_node(value);
+  pos.node->prev->next = tmp;
+  tmp->prev = pos.node->prev;
+  pos.node->prev = tmp;
+  tmp->next = pos.node;
+}
+
+template <typename T, typename Alloc>
+template <typename InputIterator>
+void list<T, Alloc>::insert(iterator pos,
+							InputIterator first,
+							InputIterator last) {
+  for(; first != last; ++first)
+	insert(pos, *first);
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::insert(iterator pos, size_type n, const T& value) {
+  for(; n > 0; --n)
+	insert(pos, value);
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::insert(iterator pos, int n, const T& value) {
+  insert(pos, size_type(n), value);
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::insert(iterator pos, long n, const T& value) {
+  insert(pos, size_type(n), value);
+}
+
+template <typename T, typename Alloc>
+typename list<T, Alloc>::iterator list<T, Alloc>::erase(iterator pos) {
+  iterator tmp = pos;
+  ++tmp;
+  pos.node->prev->next = tmp.node;
+  tmp.node->prev = pos.node->prev;
+  destroy_node(pos.node);
+  return tmp;
+}
+
+template <typename T, typename Alloc>
+typename list<T, Alloc>::iterator list<T, Alloc>::erase(iterator first,
+														iterator last) {
+  while(first != last)
+	erase(first++);
+  return last;
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::resize(size_type new_size, const T& value) {
+  size_type old_size = size();
+  if (old_size < new_size) {
+	insert(end(), new_size - old_size, value);
+  } else {
+	iterator new_end = end();
+	for (; old_size != new_size; --old_size, --new_end)
+	  ;
+	erase(new_end, end());
+  }
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::splice(iterator pos, list<T, Alloc>& x) {
+  if (x.empty())
+	return;
+  transfer(pos, x.begin(), x.end());
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::splice(iterator pos, list&, iterator i) {
+  iterator j = i;
+  ++j;
+  if (pos == i || pos == j)
+	return;
+  transfer(pos, i, j);
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::splice(iterator pos,
+							list&,
+							iterator first,
+							iterator last) {
+  if (first == last)
+	return;
+  transfer(pos, first, last);
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::remove(const T& value) {
+  iterator first = begin();
+  iterator last = end();
+  for (; first != last; ++first)
+	if (*first == value)
+	  erase(first);
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::unique() {
+  if (empty())
+	return;
+  iterator first = begin();
+  iterator last = end();
+  iterator next = first;
+  while (++next != last) {
+	if (*first == *next)
+	  first = erase(first);
+	else
+	  first = next;
+  }
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::merge(list<T, Alloc>& x) {
+  if (x.empty())
+	return;
+  iterator first1 = begin();
+  iterator last1 = end();
+  iterator first2 = x.begin();
+  iterator last2 = x.end();
+  while (first1 != last1 && first2 != last2) {
+	if (*first2 < *first1) {
+	  splice(first1, x, first2);
+	  first2 = x.begin();
+	} else
+	  ++first1;
+  }
+  if (first1 == last1)
+	splice(last1, x, first2, last2);
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::reverse() {
+  if (node->next == node || node->next->next == node)
+	return;
+  iterator first = begin();
+  iterator last = end();
+  ++first;
+  while (first != last) {
+	iterator old = first;
+	++first;
+	transfer(begin(), old, first);
+  }
+}
+
+template <typename T, typename Alloc>
+void list<T, Alloc>::sort() {
+  if (node->next == node || node->next->next == node)
+	return;
+  list<T, Alloc> carry;
+  list<T, Alloc> counter[64];
+  int fill = 0;
+  while (!empty()) {
+	carry.splice(carry.begin(), *this, begin());
+	int i = 0;
+	while (i < fill && !counter[i].empty()) {
+	  counter[i].merge(carry);
+	  carry.swap(counter[i++]);
+	}
+	carry.swap(counter[i]);
+	if (i == fill)
+	  ++fill;
+  }
+  for (int i = 1; i < fill; ++i)
+	counter[i].merge(counter[i - 1]);
+  swap(counter[fill - 1]);
+}
+
+template <typename T, class Alloc>
+inline bool operator==(const list<T, Alloc>& lhs, const list<T, Alloc>& rhs) {
+  auto end1 = lhs.node;
+  auto end2 = rhs.node;
+  auto first1 = end1->next;
+  auto first2 = end2->next;
+  for (; first1 != end1 && first2 != end2;
+		 first1 = first1->next, first2 = first2->next)
+	if (first1->data != first2->data)
+	  return false;
+  return first1 == end1 && first2 == end2;
+}
+
+template <typename T, typename Alloc>
+inline bool operator<(const list<T, Alloc>& lhs, const list<T, Alloc>& rhs) {
+  auto end1 = lhs.node;
+  auto end2 = rhs.node;
+  auto first1 = end1->next;
+  auto first2 = end2->next;
+  for (; first1 != end1 && first2 != end2;
+		 first1 = first1->next, first2 = first2->next) {
+	if (first1->data < first2->date)
+	  return true;
+	else if (first2->data < first1->data)
+	  return false;
+  }
+  return first1 != end1 && first2 == end2;
+}
+
+} // namespace tinystl
 #endif //TINYSTL__LIST_H_
