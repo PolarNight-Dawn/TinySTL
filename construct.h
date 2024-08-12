@@ -58,11 +58,11 @@ inline void destroy(T *ptr) {
 
 /* 如判断 value type 为 trivial destructor 不调用析构操作 */
 template<typename ForwardIterator>
-inline void destroy_aux(ForwardIterator, ForwardIterator, std::true_type) {}
+inline void destroy_aux(ForwardIterator, ForwardIterator, _true_type) {}
 
 /* 如判断 value type 为 non-trivial destructor */
 template<typename ForwardIterator>
-inline void destroy_aux(ForwardIterator first, ForwardIterator last, std::false_type) {
+inline void destroy_aux(ForwardIterator first, ForwardIterator last, _false_type) {
   for (; first < last; ++first)
 	destroy(&*first);
 }
@@ -70,11 +70,25 @@ inline void destroy_aux(ForwardIterator first, ForwardIterator last, std::false_
 /* destroy 版本二 接受两个迭代器
  * 判断 value type 是否有 trivial destructor
  * 首先利用 value_type() 获取迭代器所指对象的型别，再利用 type_traits<T> 判断该型别的析构函数是否无关痛痒（所谓 traits destructor） */
+
+/*
 template<typename ForwardIterator>
 inline void destroy(ForwardIterator first, ForwardIterator last) {
-  using value_type = typename tinystl::iterator_traits<ForwardIterator>::value_type;
+  using value_type = typename tinystl::iterator_traits<ForwardIterator>::value_type*;
   using is_trivial_dtor = typename type_traits<value_type>::has_trivial_destructor;
   destroy_aux(first, last, is_trivial_dtor());
+}
+*/
+
+template<typename ForwardIterator, typename T>
+inline void destroy_POD(ForwardIterator first, ForwardIterator last, T*) {
+  using is_trivial_dtor = typename type_traits<T>::has_trivial_destructor;
+  destroy_aux(first, last, is_trivial_dtor());
+}
+
+template<typename ForwardIterator>
+inline void destroy(ForwardIterator first, ForwardIterator last) {
+  destroy_POD(first, last, value_type(first));
 }
 
 } // namespace tinystl
