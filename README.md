@@ -2,7 +2,14 @@
 
 想要深入理解 STL 总得造一个玩具轮子来玩玩吧
 
+## 介绍
+
+项目有一定的注释，但主要是对框架的一些解释，如果想看具体函数的实现原理，《STL 源码剖析》你值得拥有😉，
+项目中的实现只会与书中有一些细节上的变化。项目中的思路过程整理成了几篇博文，如果你想要了解一下的话，
+[点击这里](https://polarnight-dawn.cn/2024/07/30/STL-%E5%89%96%E6%9E%90%EF%BC%9A%E7%A9%BA%E9%97%B4%E9%85%8D%E7%BD%AE%E5%99%A8%EF%BC%88allocator%EF%BC%89/)进入
+
 ## 目录
+
 - 空间配置器 allocator
   - SGI 标准的空间配置器，std::allocator（allocator.h）
   - 构造与析构工具（construct.h）
@@ -32,4 +39,4 @@
 
 ## 参考资料
 - 《STL 源码剖析》by 候捷
--  GNU ISO C++ Library
+- GNU ISO C++ Library
