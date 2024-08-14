@@ -20,7 +20,7 @@ namespace tinystl {
 struct input_iterator_tag {};
 struct output_iterator_tag {};
 struct forward_iterator_tag : public input_iterator_tag {};
-struct bidirectional_iterator_tag : forward_iterator_tag {};
+struct bidirectional_iterator_tag : public forward_iterator_tag {};
 struct random_access_iterator_tag : public bidirectional_iterator_tag {};
 
 /* iterator 模板 */
@@ -75,14 +75,14 @@ iterator_category(const Iterator &) {
 template<typename Iterator>
 inline typename iterator_traits<Iterator>::difference_type *
 difference_type(const Iterator &) {
-  return static_cast<typename iterator_traits<Iterator>::difference_type *>(nullptr);
+  return static_cast<typename iterator_traits<Iterator>::difference_type *>(0);
 }
 
 /* 更加方便地萃取 iterator 的 value_type */
 template<typename Iterator>
 inline typename iterator_traits<Iterator>::value_type *
 value_type(const Iterator &) {
-  return static_cast<typename iterator_traits<Iterator>::value_type *>(nullptr);
+  return static_cast<typename iterator_traits<Iterator>::value_type *>(0);
 }
 
 /* distance() 系列函数
@@ -92,7 +92,7 @@ value_type(const Iterator &) {
 template<typename InputIterator>
 inline typename iterator_traits<InputIterator>::difference_type
 distance_aux(InputIterator first, InputIterator last, input_iterator_tag) {
-  typename iterator_traits<InputIterator>::difference_type n = nullptr;
+  typename iterator_traits<InputIterator>::difference_type n = 0;
   for (; first != last; ++first, ++n);
   return n;
 }
@@ -135,26 +135,26 @@ inline void distance(InputIterator first, InputIterator last, Distance &n) {
 /* advance 的 input_iterator_tag 的版本 */
 template<typename InputIterator, typename Distance>
 inline void advance_aux(InputIterator iter, const Distance &n, input_iterator_tag) {
-  for (; n != nullptr; --n, ++iter);
+  for (; n != 0; --n, ++iter);
 }
 
 /* advance 的 bidirectional_iterator_tag 的版本 */
 template<typename BidirectionalIterator, typename Distance>
-inline void advance_aux(BidirectionalIterator iter, const Distance &n, bidirectional_iterator_tag) {
-  if (n >= nullptr)
-	for (; n != nullptr; --n, ++iter);
+inline void advance_aux(BidirectionalIterator iter,  Distance n, bidirectional_iterator_tag) {
+  if (n >= 0)
+	while (n--) ++iter;
   else
-	for (; n != nullptr; ++n, --iter);
+	while (n++) --iter;
 }
 
 /* advance 的 random_access_iterator_tag 的版本 */
 template<typename RandomAccessIterator, typename Distance>
-inline void advance_aux(RandomAccessIterator iter, const Distance &n, random_access_iterator_tag) {
+inline void advance_aux(RandomAccessIterator iter,  Distance n, random_access_iterator_tag) {
   iter += n;
 }
 
 template<typename InputIterator, typename Distance>
-inline void advance(InputIterator iter, const Distance &n) {
+inline void advance(InputIterator iter,  Distance n) {
   advance_aux(iter, n, iterator_category(iter));
 }
 

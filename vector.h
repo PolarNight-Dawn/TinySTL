@@ -57,7 +57,7 @@ class vector {
 	deallocate();
   }
 
-  vector &operator=(const vector &vec);
+  vector &operator=(const vector &rhs);
   vector &operator=(vector &&rhs) noexcept;
   vector &operator=(std::initializer_list<value_type> rhs);
 

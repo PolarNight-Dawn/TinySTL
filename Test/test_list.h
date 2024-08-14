@@ -8,7 +8,6 @@
 #include <iostream>
 #include "test.h"
 #include "../list.h"
-#include <list>
 
 namespace tinystl{
 
