@@ -8,8 +8,6 @@
 #include <iostream>
 #include "test.h"
 #include "../deque.h"
-#include <deque>
-#include <bits/stl_deque.h>
 
 namespace tinystl{
 
