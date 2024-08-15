@@ -74,6 +74,6 @@ void vector_test() {
 			   "---------------------------]\n";
 }
 
-} //namespace tinystl
+} // namespace tinystl
 
 #endif //TINYSTL_TEST_TEST_VECTOR_H_

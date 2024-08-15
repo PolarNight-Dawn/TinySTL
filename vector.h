@@ -33,6 +33,7 @@ class vector {
   iterator finish;
   iterator end_of_storage;
 
+  /* 内部辅助函数 */
   void destroy_and_recover(iterator first, iterator last, size_type n);
   size_type get_new_cap(size_type add_size);
   void insert_aux(iterator position, const value_type &value);

@@ -114,7 +114,7 @@ inline void uninitialized_fill_POD(ForwardIterator first, ForwardIterator last, 
 
 template<typename ForwardIterator, typename T>
 inline void uninitialized_fill(ForwardIterator first, ForwardIterator last, const T &x) {
-  uninitialized_fill(first, last, x, value_type(first));
+  uninitialized_fill_POD(first, last, x, value_type(first));
 }
 
 /* uninitialized_fill_n() */

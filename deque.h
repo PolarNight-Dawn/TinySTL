@@ -45,7 +45,7 @@ struct deque_iterator : public tinystl::iterator<random_access_iterator_tag, T> 
   deque_iterator(T *value_ptr, map_pointer node_ptr)
 	  : cur(value_ptr), first(*node_ptr), last(*node_ptr + buffer_size()), node(node_ptr) {}
   deque_iterator() : cur(nullptr), first(nullptr), last(nullptr), node(nullptr) {}
-  explicit deque_iterator(const iterator &iter) : cur(iter.cur), first(iter.first), last(iter.last), node(iter.node) {}
+  deque_iterator(const iterator &iter) : cur(iter.cur), first(iter.first), last(iter.last), node(iter.node) {}
 
   /* 重载各种运算符 */
   reference operator*() const { return *cur; }
@@ -101,10 +101,10 @@ struct deque_iterator : public tinystl::iterator<random_access_iterator_tag, T> 
 	return tmp -= n;
   }
   reference operator[](difference_type n) const { return *(*this + n); }
-  bool operator==(const self &x) const { return cur == x.cur; }
-  bool operator!=(const self &x) const { return cur != x.cur; }
-  bool operator<(const self &x) const {
-	return (node == x.node) ? (cur < x.cur) : (node < x.node);
+  bool operator==(const self &rhs) const { return cur == rhs.cur; }
+  bool operator!=(const self &rhs) const { return cur != rhs.cur; }
+  bool operator<(const self &rhs) const {
+	return (node == rhs.node) ? (cur < rhs.cur) : (node < rhs.node);
   }
 }; // deque_iterator end
 
@@ -134,6 +134,7 @@ class deque {
   map_pointer map;
   size_type map_size;
 
+  /* 内部辅助函数 */
   static size_type buffer_size() { return deque_buf_size(0, sizeof(T)); }
   static size_type init_map_size() { return static_cast<size_type>(8); }
   void create_map_nodes(size_type num_element);
@@ -144,6 +145,8 @@ class deque {
   void insert_aux(iterator pos, size_type n, const value_type &value);
   iterator reserve_elements_at_front(size_type n);
   iterator reserve_elements_at_back(size_type n);
+  void destroy_nodes_at_front(iterator before_start);
+  void destroy_nodes_at_back(iterator after_finish);
   pointer allocate_node() { return data_allocator::allocate(buffer_size()); }
   void deallocate_node(pointer ptr) { data_allocator::deallocate(ptr); }
   void reserve_map_at_front(size_type nodes_to_add = 1) {
@@ -162,9 +165,10 @@ class deque {
   deque(size_type n, const value_type &value) { fill_init(n, value); }
   deque(int n, const value_type &value) { fill_init(n, value); }
   deque(long n, const value_type &value) { fill_init(n, value); }
-  explicit deque(size_type n) { fill_init(n, value_type()); }
+  deque(size_type n) { fill_init(n, value_type()); }
   template<typename InputIterator>
   deque(InputIterator first, InputIterator last) { copy_init(first, last); }
+  deque(std::initializer_list<value_type> rhs) { copy_init(rhs.begin(), rhs.end()); }
   ~deque() {
 	destroy(start, finish);
 	destroy_map_nodes();
@@ -183,10 +187,10 @@ class deque {
   iterator end() { return this->finish; }
   const_iterator end() const noexcept { return this->finish; }
 
-  reverse_iterator rbegin() noexcept { return reverse_iter(finish); }
-  const_reverse_iterator rbgein() const noexcept { return const_reverse_iter(finish); }
-  reverse_iterator rend() noexcept { return reverse_iter(start); }
-  const_reverse_iterator rend() const noexcept { return const_reverse_iter(start); }
+  reverse_iterator rbegin() noexcept { return reverse_iterator(finish); }
+  const_reverse_iterator rbgein() const noexcept { return const_reverse_iterator(finish); }
+  reverse_iterator rend() noexcept { return reverse_iterator(start); }
+  const_reverse_iterator rend() const noexcept { return const_reverse_iterator(start); }
 
   const_iterator cbegin() const noexcept { return begin(); }
   const_iterator cend() const noexcept { return end(); }
@@ -196,7 +200,7 @@ class deque {
   size_type max_size() const { return static_cast<size_type>(-1); }
   bool empty() const { return begin() == end(); }
 
-  /* 访问相关操作 */
+  /* access 相关操作 */
   reference operator[](size_type n) { return start[static_cast<difference_type>(n)]; }
   const_reference operator[](size_type n) const { return start[static_cast<difference_type>(n)]; }
   reference front() { return *begin(); }
@@ -237,8 +241,7 @@ class deque {
   }
   bool operator!=(const deque<T, Allocator, BufSize> &rhs) { return !(*this == rhs); }
   bool operator<(const deque<T, Allocator, BufSize> &rhs) {
-	return std::lexicographical_compare(begin(), end(), rhs.begin(),
-										rhs.end());
+	return std::lexicographical_compare(begin(), end(), rhs.begin(), rhs.end());
   }
 }; // deque end
 
@@ -286,11 +289,10 @@ template<typename T, typename Allocator, size_t BufSize>
 void deque<T, Allocator, BufSize>::fill_init(size_type n, const value_type &value) {
   create_map_nodes(n);
   map_pointer cur;
-
   try {
 	for (cur = start.node; cur < finish.node; ++cur)
 	  uninitialized_fill(*cur, *cur + buffer_size(), value);
-	uninitialized_fill(finish.first, finish, cur, value);
+	uninitialized_fill(finish.first, finish.cur, value);
   } catch (...) {
 	for (map_pointer mptr = start.node; mptr <= cur; ++mptr)
 	  destroy(*mptr, *mptr + buffer_size());
@@ -342,7 +344,7 @@ void deque<T, Allocator, BufSize>::insert_aux(iterator pos, size_type n, const v
 		uninitialized_fill(finish, pos + n, value);
 		uninitialized_copy(pos, finish, pos + n);
 		finish = new_finish;
-		fill(pos, old_finish, value);
+		std::fill(pos, old_finish, value);
 	  }
 	} catch (...) {
 	  destroy_nodes_at_back(new_finish);
@@ -388,6 +390,18 @@ typename deque<T, Allocator, BufSize>::iterator deque<T, Allocator, BufSize>::re
 	}
   }
   return finish + difference_type(n);
+}
+
+template<typename T, typename Allocator, size_t BufSize>
+void deque<T, Allocator, BufSize>::destroy_nodes_at_front(iterator before_start) {
+  for (map_pointer n = before_start.node; n < start.node; ++n)
+	deallocate_node(*n);
+}
+
+template<typename T, typename Allocator, size_t BufSize>
+void deque<T, Allocator, BufSize>::destroy_nodes_at_back(iterator after_finish) {
+  for (map_pointer n = after_finish.node; n > finish.node; --n)
+	deallocate_node(*n);
 }
 
 template<typename T, typename Allocator, size_t BufSize>
@@ -515,7 +529,7 @@ typename deque<T, Allocator, BufSize>::iterator deque<T, Allocator, BufSize>::in
 	return tmp;
   } else {
 	difference_type index = pos - start;
-	if (index < size() < 2) {
+	if (index < size() && size() < 2) {
 	  push_front(front());
 	  iterator front1 = start + 1;
 	  iterator front2 = front1 + 1;
@@ -551,7 +565,7 @@ void deque<T, Allocator, BufSize>::insert(iterator pos, size_type n, const value
 template<typename T, typename Allocator, size_t BufSize>
 template<typename InputIterator>
 void deque<T, Allocator, BufSize>::insert(iterator pos, InputIterator first, InputIterator last) {
-  copy(first, last, std::inserter(*this, pos));
+  std::copy(first, last, std::inserter(*this, pos));
 }
 
 template<typename T, typename Allocator, size_t BufSize>
@@ -572,7 +586,7 @@ typename deque<T, Allocator, BufSize>::iterator deque<T, Allocator, BufSize>::er
 	std::copy_backward(start, pos, next);
 	pop_front();
   } else {
-	copy(next, finish, pos);
+	std::copy(next, finish, pos);
 	pop_front();
   }
   return start + index;
@@ -590,15 +604,14 @@ typename deque<T, Allocator, BufSize>::iterator deque<T, Allocator, BufSize>::er
 	  std::copy_backward(start, first, last);
 	  iterator new_start = start + n;
 	  destroy(start, new_start);
-	  for (map_pointer cur = start.node; cur < new_start; ++cur)
+	  for (map_pointer cur = start.node; cur < new_start.node; ++cur)
 		data_allocator::deallocate(*cur, buffer_size());
 	  start = new_start;
 	} else {
 	  std::copy(last, finish, first);
 	  iterator new_finish = finish - n;
 	  destroy(new_finish, finish);
-	  for (map_pointer cur = new_finish.node + 1; cur <= finish.node;
-		   ++cur)
+	  for (map_pointer cur = new_finish.node + 1; cur <= finish.node; ++cur)
 		data_allocator::deallocate(*cur, buffer_size());
 	  finish = new_finish;
 	}

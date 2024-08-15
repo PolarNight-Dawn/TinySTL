@@ -1,31 +1,33 @@
 //
-// Created by polarnight on 24-8-12, 下午9:08.
+// Created by polarnight on 24-8-14, 下午10:33.
 //
 
-#ifndef TINYSTL_TEST_TEST_LIST_H_
-#define TINYSTL_TEST_TEST_LIST_H_
+#ifndef TINYSTL_TEST_TEST_DEQUE_H_
+#define TINYSTL_TEST_TEST_DEQUE_H_
 
 #include <iostream>
 #include "test.h"
-#include "../list.h"
+#include "../deque.h"
+#include <deque>
+#include <bits/stl_deque.h>
 
 namespace tinystl{
 
-void list_test() {
+void deque_test() {
   std::cout << "[============================================================"
 			   "===]\n";
-  std::cout << "[----------------- Run container test : list "
+  std::cout << "[----------------- Run container test : deque "
 			   "-------------------]\n";
   std::cout << "[-------------------------- API test "
 			   "---------------------------]\n";
   int a[] = {1, 2, 3, 4, 5};
-  tinystl::list<int> l1;
-  tinystl::list<int> l2(10);
-  tinystl::list<int> l3(10, 1);
-  tinystl::list<int> l4(a, a + 5);
-  tinystl::list<int> l5(l4);
-  tinystl::list<int> l6 = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-  tinystl::list<int> l7(l6.begin(), l6.end());
+  tinystl::deque<int> l1;
+  tinystl::deque<int> l2(10);
+  tinystl::deque<int> l3(10, 1);
+  tinystl::deque<int> l4(a, a + 5);
+  tinystl::deque<int> l5(l4);
+  tinystl::deque<int> l6 = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+  tinystl::deque<int> l7(l6.begin(), l6.end());
   l1 = l3;
   PRINT(l1);
   PRINT(l2);
@@ -41,10 +43,7 @@ void list_test() {
   FUN_AFTER(l1, l1.pop_back());
   FUN_AFTER(l1, l1.pop_front());
   FUN_AFTER(l1, l1.erase(l1.begin()));
-  auto start = l1.begin();
-  auto end = start;
-  tinystl::advance(end, 3);
-  FUN_AFTER(l1, l1.erase(start,end));
+  FUN_AFTER(l1, l1.erase(l1.begin(),l1.begin() + 2));
   FUN_AFTER(l1, l1.swap(l4));
   FUN_VALUE(*l1.begin());
   FUN_VALUE(*l1.cbegin());
@@ -54,14 +53,9 @@ void list_test() {
   FUN_VALUE(*(--l1.rend()));
   FUN_VALUE(l1.front());
   FUN_VALUE(l1.back());
-  FUN_AFTER(l1, l1.splice(l1.begin(), l2));
-  FUN_AFTER(l1, l1.splice(l1.begin(), l3, l3.begin()));
-  FUN_AFTER(l1, l1.splice(l1.begin(), l4, l4.begin(), l4.end()));
   FUN_VALUE(l1.size());
   FUN_VALUE(l1.max_size());
   FUN_VALUE(l1.empty());
-  FUN_AFTER(l1, l1.reverse());
-  FUN_AFTER(l1, l1.sort());
   FUN_VALUE(l1.size());
   FUN_AFTER(l1, l1.resize(30, 5));
   FUN_AFTER(l1, l1.clear());
@@ -72,4 +66,4 @@ void list_test() {
 
 } // namespace tinystl
 
-#endif //TINYSTL_TEST_TEST_LIST_H_
+#endif //TINYSTL_TEST_TEST_DEQUE_H_

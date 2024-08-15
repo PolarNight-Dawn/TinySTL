@@ -125,6 +125,8 @@ class list {
 
  protected:
   link_type node;
+
+  /* 内部辅助函数 */
   link_type get_node() { return list_node_allocator::allocate(); }
   void put_node(link_type p) { list_node_allocator::deallocate(p); }
   link_type create_node(const_reference x);
