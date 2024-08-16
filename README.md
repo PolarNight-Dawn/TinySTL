@@ -33,6 +33,7 @@
       - stack（stack.h）
       - queue（queue.h）
     - heap（heap.h）
+      - priority_queue（priority_queue.h）
   - 关联式容器 associative containers
     - RB-tree（tree.h） 
       - set/multiset（set.h）
