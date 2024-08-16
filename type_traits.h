@@ -177,12 +177,15 @@ struct type_traits<T *> {
 
 /* help struct */
 template<typename T, T v>
-struct integral_constant {
+struct intergral_constant {
+  using value_type = T;
+  using type = intergral_constant<T, v>;
+
   static constexpr T value = v;
 };
 
-using true_type = integral_constant<bool, true>;
-using false_type = integral_constant<bool, false>;
+using true_type = intergral_constant<bool, true>;
+using false_type = intergral_constant<bool, false>;
 
 template<typename T>
 struct is_const : public false_type {};
